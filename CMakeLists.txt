@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.15...3.26)
 
-project(nanobind_example LANGUAGES CXX)
+project(nanobind_example LANGUAGES CXX ISPC)
 
 if (NOT SKBUILD)
   message(WARNING "\
@@ -33,27 +33,19 @@ find_package(Python 3.8
 # Import nanobind through CMake's find_package mechanism
 find_package(nanobind CONFIG REQUIRED)
 
+add_library(mandelbrot src/mandelbrot.ispc)
+# target_include_directories(mandelbrot PUBLIC $<TARGET_PROPERTY:ISPC_HEADER_DIRECTORY>)
+
 # We are now ready to compile the actual extension module
 nanobind_add_module(
   # Name of the extension
   nanobind_example_ext
 
-  # Target the stable ABI for Python 3.12+, which reduces
-  # the number of binary wheels that must be built. This
-  # does nothing on older Python versions
-  STABLE_ABI
-
-  # Build libnanobind statically and merge it into the
-  # extension (which itself remains a shared library)
-  #
-  # If your project builds multiple extensions, you can
-  # replace this flag by NB_SHARED to conserve space by
-  # reusing a shared libnanobind across libraries
-  NB_STATIC
-
   # Source code goes here
   src/nanobind_example_ext.cpp
 )
 
+target_link_libraries(nanobind_example_ext PUBLIC mandelbrot)
+
 # Install directive for scikit-build-core
-install(TARGETS nanobind_example_ext LIBRARY DESTINATION nanobind_example)
+install(TARGETS nanobind_example_ext mandelbrot LIBRARY DESTINATION nanobind_example)
